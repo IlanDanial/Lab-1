@@ -2,7 +2,7 @@ NVCC := nvcc
 CXX  := g++
 
 # HiPerGator GPU flags
-NVCC_FLAGS := -O3 -std=c++17 --compiler-options -Wall -Wextra
+NVCC_FLAGS := -O3 -std=c++17 -Xcompiler -Wall,-Wextra
 INCLUDES   := -I../include -I.
 
 # Target executable name (default to lab1)
