@@ -27,7 +27,7 @@ $(TARGET): $(OBJS)
 	$(CXX) -O3 -std=c++17 -Wall -Wextra $(INCLUDES) -c $< -o $@
 
 clean:
-	rm -f $(TARGET) *.o slurm-*.out slurm-*.err
+	rm -f $(TARGET) *.o
 
 run: $(TARGET)
 	./$(TARGET)
