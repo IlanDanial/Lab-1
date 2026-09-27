@@ -53,13 +53,11 @@ int main(int argc, char** argv) {
     int T = thread::hardware_concurrency();
     if (T == 0) T = 4;
 
-    // --- 1. Single-Thread CPU Timing ---
     auto start_cpu = chrono::high_resolution_clock::now();
     vecadd_cpu(x.data(), y.data(), ref.data(), N);
     auto end_cpu = chrono::high_resolution_clock::now();
     chrono::duration<double, milli> cpu_st_ms = end_cpu - start_cpu;
 
-    // --- 2. Multi-Thread CPU Timing ---
     auto start_cpu_mt = chrono::high_resolution_clock::now();
     vecadd_cpu_mt(x.data(), y.data(), ref.data(), N, T);
     auto end_cpu_mt = chrono::high_resolution_clock::now();

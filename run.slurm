@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -l
 #SBATCH --job-name=gpu_lab1
 #SBATCH --output=slurm-%j.out
 #SBATCH --error=slurm-%j.err
