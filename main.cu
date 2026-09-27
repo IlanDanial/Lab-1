@@ -6,6 +6,7 @@
 #include <thread>
 #include <chrono>
 #include <iostream>
+#include <iomanip>
 using namespace std;
 
 inline void cuda_check(cudaError_t e) {
@@ -47,34 +48,43 @@ int main(int argc, char** argv) {
 
     // Grab N from command line arg
     int N = (argc > 1) ? std::atoi(argv[1]) : 1000;
+    //initialize variables
     size_t bytes = size_t(N) * sizeof(float);
     std::vector<float> x(N, 1.0f), y(N, 2.0f);
     std::vector<float> got(N), ref(N);
     int T = thread::hardware_concurrency();
     if (T == 0) T = 4;
 
+    // single thread
     auto start_cpu = chrono::high_resolution_clock::now();
     vecadd_cpu(x.data(), y.data(), ref.data(), N);
     auto end_cpu = chrono::high_resolution_clock::now();
     chrono::duration<double, milli> cpu_st_ms = end_cpu - start_cpu;
 
+    //multi thread
     auto start_cpu_mt = chrono::high_resolution_clock::now();
     vecadd_cpu_mt(x.data(), y.data(), ref.data(), N, T);
     auto end_cpu_mt = chrono::high_resolution_clock::now();
     chrono::duration<double, milli> cpu_mt_ms = end_cpu_mt - start_cpu_mt;
 
+    //warm up
+    // initialize memory pointers
     float *d_x, *d_y, *d_z;
 
+    // allocate memory
     CUDA_CHECK(cudaMalloc(&d_x, bytes));
     CUDA_CHECK(cudaMalloc(&d_y, bytes));
     CUDA_CHECK(cudaMalloc(&d_z, bytes));
+    // move data to gpu
     CUDA_CHECK(cudaMemcpy(d_x, x.data(), bytes, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_y, y.data(), bytes, cudaMemcpyHostToDevice));
     const int threadsPerBlock = 256;
     const int numBlocks = (N + threadsPerBlock - 1) / threadsPerBlock;
+    //run kernel
     vecadd_kernel<<<numBlocks, threadsPerBlock>>>(d_x, d_y, d_z, N);
     CUDA_CHECK(cudaGetLastError());
     CUDA_CHECK(cudaDeviceSynchronize());
+    // get data back to cpu
     CUDA_CHECK(cudaMemcpy(got.data(), d_z, bytes, cudaMemcpyDeviceToHost));
     bool pass = verify(got.data(), ref.data(), N, 1e-5f);
 
@@ -91,14 +101,15 @@ int main(int argc, char** argv) {
     auto end_transfer = chrono::high_resolution_clock::now();
     pass = verify(got.data(), ref.data(), N, 1e-5f);
     printf("%s N=%d\n", pass ? "PASS" : "FAIL", N);
+    // de allocate from the gpu
     CUDA_CHECK(cudaFree(d_x)); CUDA_CHECK(cudaFree(d_y)); CUDA_CHECK(cudaFree(d_z));
     
     chrono::duration<double, milli> app_ms = end_transfer - start_transfer;
     chrono::duration<double, milli> gpu_ms = end_gpu - start_gpu;
-
-    cout << "CPU (Single-Thread) Time: " << cpu_st_ms.count() << " ms" << endl;
-    cout << "CPU (" << T << "-Thread) Time:        " << cpu_mt_ms.count() << " ms" << endl;
-    cout << "GPU Time:                 " << gpu_ms.count() << " ms" << endl;
-    cout << "Application Time:         " << app_ms.count() << " ms" << endl;
+    cout << fixed << setprecision(6);
+    cout << " " << left << setw(26) << "CPU (Single-Thread) Time:" << right << setw(10) << cpu_st_ms.count() << " ms" << endl;
+    cout << " " << left << setw(26) << ("CPU (" + to_string(T) + "-Thread) Time:") << right << setw(10) << cpu_mt_ms.count() << " ms" << endl;
+    cout << " " << left << setw(26) << "GPU Time:" << right << setw(10) << gpu_ms.count() << " ms" << endl;
+    cout << " " << left << setw(26) << "Application Time:" << right << setw(10) << app_ms.count() << " ms" << endl;
     return pass ? 0 : 1;
 }
