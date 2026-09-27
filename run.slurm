@@ -4,9 +4,8 @@
 #SBATCH --error=slurm-%j.err
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=2
-#SBATCH --mem=8gb
-#SBATCH --partition=gpu
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=16gb
 #SBATCH --gpus=1
 #SBATCH --time=00:10:00
 #SBATCH --account=eel4930
